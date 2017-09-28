@@ -1,8 +1,10 @@
-package com.company;
+package pack;
 
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class Main {
 
@@ -10,7 +12,7 @@ public class Main {
 
         Foo f = new Foo();
 
-        Thread threadA = new Thread(ThreadA) {
+        Thread threadA = new Thread() {
             public void run() {
                 f.first();
             }
@@ -18,20 +20,15 @@ public class Main {
 
         threadA.start();
 
-        Thread threadB = new Thread(ThreadB) {
+        Thread threadB = new Thread() {
             public void run() {
-                try{
-                    sleep(1000);
-                }catch (InterruptedException e){
-
-                }
                 f.second();
             }
         };
 
         threadB.start();
 
-        Thread threadC = new Thread(ThreadC) {
+        Thread threadC = new Thread() {
             public void run() {
                 f.third();
             }
@@ -45,40 +42,24 @@ public class Main {
 
 class Foo {
     public Foo() {
-
+        
     }
 
-    final Object second = new Object();
-    final Object third = new Object();
-
+    volatile boolean isFirstComplete = false;
+    volatile boolean isSecondComplete = false;
+    
     public void first() {
-        System.out.println(first);
-        second.notify();
+        System.out.println("first complete");
+        isFirstComplete = true;
 
     }
     public void second() {
-        synchronized (second) {
-            try {
-                second.wait();
-            }catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-            System.out.println(second);
-            third.notify();
-        }
-
+        while (!isFirstComplete) {}
+        System.out.println("second complete");
+        isSecondComplete = true;
     }
     public void third() {
-
-        synchronized (third) {
-            try {
-                third.wait();
-            }catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-            System.out.println(third);
-        }
-
+        while (!isSecondComplete) {}
+        System.out.println("third complete");
     }
 }
-
