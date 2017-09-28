@@ -1,7 +1,10 @@
-package com.company;
+﻿package pack;
 
+import java.util.LinkedList;
+import java.util.Queue;
 import java.util.Random;
-import java.util.concurrent.SynchronousQueue;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 // Производитель потребитель
 // Вывод на экран значений не синхронизирован
@@ -9,28 +12,23 @@ public class Main {
 
     public static void main(String args[]) {
 
-        final SynchronousQueue<Integer> queue = new SynchronousQueue<>();
-        final int BUFFER_SIZE = 100;
+        final Queue<Integer> queue = new LinkedList<>();
+        final int BUFFER_SIZE = 10;
         final int RANDOM_BOUND = 100;
-
+        
         Thread producer = new Thread("PRODUCER") {
             public void run() {
                 Random rnd = new Random();
                 int event = -1;
                 while(true) {
                     if(event == -1) event = rnd.nextInt(RANDOM_BOUND);
-
-                    if(queue.size() < BUFFER_SIZE) {
-                        try {
+                    synchronized(queue){
+                        if(queue.size() < BUFFER_SIZE) {
                             System.out.printf("[%s] produce : %s %n", Thread.currentThread().getName(), event);
-                            queue.put(event);
-                            sleep(event);
+                            queue.add(event);
                             event = -1;
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
                         }
                     }
-
                 }
             }
         };
@@ -39,14 +37,13 @@ public class Main {
 
         Thread consumer = new Thread("CONSUMER") {
             public void run() {
-                try {
-                    while (true) {
-                        int event = queue.take(); // thread will block here
-                        System.out.printf("[%s] consumed event : %s %n", Thread.currentThread().getName(), event);
-                        sleep(event);
-                    }
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
+                while (true) {
+                    synchronized(queue){
+                        if(queue.size() > 0){
+                            int event = queue.remove(); // thread will block here
+                            System.out.printf("[%s] consumed : %s %n", Thread.currentThread().getName(), event);
+                        }
+                   }
                 }
             }
         };
@@ -54,4 +51,3 @@ public class Main {
         consumer.start(); // starting consumer thread
     }
 }
-
