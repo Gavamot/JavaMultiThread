@@ -8,6 +8,15 @@ import java.util.function.UnaryOperator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+/*
+FizzBuZZ
+Напишите многопоточную версию этого алгоритма.
+
+Один поток проверяет кратность З и выводит «Fizz». Другой поток отвечает за проверку кратности 5 и выводит «Buzz». Третий поток отвечает за проверку кратности З и 5 и выводит «FizzBuZZ». Четвертый поток работает с числами.
+
+Алгоритм — https://paste2.org/K8KB9zbL
+*/
+
 public class Main {
 
     public static void main(String args[]) {
