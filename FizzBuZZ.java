@@ -1,93 +1,71 @@
-package pack;
-
-import java.util.ArrayList;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
-import java.util.function.UnaryOperator;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
 /*
-FizzBuZZ
-Напишите многопоточную версию этого алгоритма.
+Реализуйте потоки производителя (Producer) и потребителя (Consumer), совместно пользующихся буфером фиксированного размера.
 
-Один поток проверяет кратность З и выводит «Fizz». Другой поток отвечает за проверку кратности 5 и выводит «Buzz». Третий поток отвечает за проверку кратности З и 5 и выводит «FizzBuZZ». Четвертый поток работает с числами.
+Первый поток должен помещать числа в буфер в бесконечном цикле, а второй — бесконечно извлекать их оттуда. Порядок добавления и извлечения чисел не имеет значения. Данные производителя не должны теряться: либо считаться потребителем, либо остаться в буфере.
 
-Алгоритм — https://paste2.org/K8KB9zbL
+Решение по организации ожидания чтения, в случае пустого буфера, или записи, в случае заполненного буфера, остается за вами.
 */
+
+package com.company;
+import java.util.concurrent.CyclicBarrier;
 
 public class Main {
 
-    public static void main(String args[]) {
-
-       FizzBuZZ fizzBuZZ = new FizzBuZZ();
-       fizzBuZZ.Start();
+    public static void main(String args[]){
+        FizzBuZZ fizzBuZZ = new FizzBuZZ();
+        fizzBuZZ.Start();
     }
-    
+}
+
+interface Check{
+    void check(int i);
 }
 
 class FizzBuZZ
 {
     public FizzBuZZ(){}
-  
+
     private volatile int i = 1;
-    private volatile int a = 0;
-    private volatile int b = 0;
-    private volatile int c = 0;
-    private final static int N = 100;
+    private static final int COUNT_CHECK = 3;
+    private CyclicBarrier Start;
+    private final static int N = 120;
 
     public void Start(){
+        Start = new CyclicBarrier(COUNT_CHECK, new ThreadI());
         threadA.start();
         threadB.start();
         threadC.start();
-        threadI.start();
     }
-    
-    Thread threadA = new Thread() {
-        public void run() {
-            while(!isInterrupted()){
-                if(a < i){
-                    if (i % 3 == 0) System.out.print("[Fizz]");
-                    a++;
-                }
-            }
+    private void awaitBarrier(CyclicBarrier start){
+        try{
+            start.await();
+        }catch (Exception e){}
+    }
+
+    Thread threadA = new ThreadChecker( (int i)-> { if (i % 3 == 0) System.out.print("[Fizz]"); });
+    Thread threadB = new ThreadChecker( (int i)-> { if (i % 5 == 0) System.out.print("[Buzz]"); });
+    Thread threadC = new ThreadChecker( (int i)-> { if (i % 3 == 0 && i % 5 == 0) System.out.print("[FizzBuzz]"); });
+
+    class ThreadChecker extends Thread {
+        private Check checkMethod;
+        public ThreadChecker(Check checkMethod){
+            this.checkMethod = checkMethod;
         }
-    };
-        
-    Thread threadB = new Thread() {
+        @Override
         public void run() {
-            while(!isInterrupted()){
-                if(b < i){
-                    if (i % 5 == 0) System.out.print("[Buzz]");
-                    b++;
-                }
-            }
+            do{
+                checkMethod.check(i);
+                awaitBarrier(Start);
+            }while (i <= N);
         }
-    };
-        
-    Thread threadC = new Thread() {
+    }
+
+    public class ThreadI implements Runnable {
+        public ThreadI() {}
+        @Override
         public void run() {
-            while(!isInterrupted()){
-                if(c < i){
-                    if (i % 3 == 0 && i % 5 == 0)  System.out.print("[FizzBuzz]");
-                    c++;
-                }
-            }
+            System.out.print("[" + i + "]");
+            i++;
         }
-    };
-        
-    Thread threadI = new Thread() {
-        public void run() {
-            while(i <= N) {
-                if(i == a && i == b && i == c){
-                    System.out.print("[" + i + "]");
-                    i++;
-                }
-            }
-            threadA.interrupt();
-            threadB.interrupt();
-            threadC.interrupt();
-        }
-    };
+    }
 }
